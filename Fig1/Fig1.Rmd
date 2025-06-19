@@ -1,0 +1,136 @@
+---
+title: "Fig1"
+output: html_document
+date: "2025-06-19"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r function}
+source("~/Documents/GitHub/SCTP_iMETA/Fig1/Eval_func.R")
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r result comparison HCC, echo=FALSE}
+eval_all =  matrix(NA, 4, 8)
+eval_cf = eval_copykat = eval_meti = matrix(NA, 4, 8)
+
+plot_methods <- c( "malignancy", "pred_meti", "pred_ck", "pred_cf")
+label_colors <- c("tumor" = "#E075A0", "normal" ="#77aecb")
+for (i in (1:4)) {
+  out_cf <- read.csv(paste0("~/Documents/GitHub/SCTP_iMETA/Fig1/out_HCC_liver",i,".csv"))
+   pred_cf <- out_cf$predict
+  copykat_prediction <- read.delim(paste0("~/Documents/GitHub/SCTP_iMETA/Fig1/ST-liver",i, "_copykat_prediction.txt"))
+   rownames(copykat_prediction) <- copykat_prediction$cell.names
+  #copykat_prediction$pred_cnv <- ifelse(substr(copykat_prediction$copykat.pred,1,2)=="c2", 1, 0)
+  copykat_prediction$pred_cnv <- ifelse(substr(copykat_prediction$copykat.pred,1,2)=="an", 1, 0)
+  test <- merge(copykat_prediction, pred_st_dataset@meta.data, by=0, all=TRUE)
+  
+  METI_label <- read.csv(paste0("~/Documents/GitHub/SCTP_iMETA/Fig1/METI_label_liver",i, ".csv"), row.names=1)
+  test <- merge(copykat_prediction, METI_label, by=0, all=TRUE)
+  pred_meti <- ifelse(METI_label$label=="Tumor", 1, 0)
+  SCTP_pred_liver1 <- read.csv(paste0("~/Documents/GitHub/SCTP_iMETA/Fig1/SCTP_pred_liver",i, ".csv"), row.names=1)
+  test$pred_sctp <-  SCTP_pred_liver1
+  test$pred_meti <- ifelse(METI_label$label=="Tumor", 1, 0)
+  test$pred_cf <- pred_cf
+  true_labels <- read.csv(paste0("~/Documents/GitHub/SCTP_iMETA/Fig1/ST_liver", i, "_true_labels.csv"), row.names=1)
+  
+  label <- ifelse(true_labels=="tumor", 1, 0 )
+  
+  eval_copykat[i, ] <- func_Eval(test$pred_cnv, label)
+  eval_meti[i, ] <- func_Eval(test$pred_meti, label)
+  eval_all[i, ] <- func_Eval(test$pred_sctp$x, resp_vec = label)
+  eval_cf[i, ] <- func_Eval(test$pred_cf, label)
+  #eval_all_old[i, ] <- func_Eval(pred_old, label)
+}
+
+my_blue <- "#095786"
+my_red <- "#ae0000"
+my_colors <- c("#E57470","#FBD37E", "#7A7DEE", "#A6DBFB")
+df_plot <- data.frame(rbind(eval_all, eval_cf,eval_meti, eval_copykat))
+colnames(df_plot) <- c("AUC", "AUCPR", "Brier", "F1","ACC", "LogLoss", "Sensitivity")
+df_plot$method <- c(rep("SCTP",4), rep("CancerFinder", 4),rep("METI", 4), rep("copykat", 4))
+df_plot$method <- factor(df_plot$method, levels = c("SCTP", "METI", "copykat", "CancerFinder"))
+df_plot$data <- rep(c("HCC1", "HCC2","HCC3","HCC4"),4)
+
+g_auc <- ggplot(df_plot, aes(data, AUC, group = method, fill=method))+
+  geom_col( position = 'dodge',width = 0.8, alpha=1)+theme_bw()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.border = element_blank())+
+  scale_y_continuous(breaks=c(seq(from=0,to=1,by=0.2)))+
+  scale_fill_manual(values = my_colors)
+
+g_f1 <- ggplot(df_plot, aes(data, F1, group = method, fill=method))+
+  geom_col( position = 'dodge',width = 0.8, alpha=1)+theme_bw()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.border = element_blank())+
+  scale_y_continuous(breaks=c(seq(from=0,to=1,by=0.2)))+
+  scale_fill_manual(values = my_colors)
+
+
+g_acc <- ggplot(df_plot, aes(data, ACC, group = method, fill=method))+
+  geom_col( position = 'dodge',width = 0.8, alpha=1)+theme_bw()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.border = element_blank())+
+  scale_y_continuous(breaks=c(seq(from=0,to=1,by=0.2)))+
+  scale_fill_manual(values = my_colors)
+
+g_sens <- ggplot(df_plot, aes(data, Sensitivity, group = method, fill=method))+
+  geom_col( position = 'dodge',width = 0.8, alpha=1)+theme_bw()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.border = element_blank())+
+  scale_y_continuous(breaks=c(seq(from=0,to=1,by=0.2)))+
+  scale_fill_manual(values =my_colors)
+
+g_Brier <- ggplot(df_plot, aes(data, Brier, group = method, fill=method))+
+  geom_col( position = 'dodge',width = 0.8, alpha=1)+theme_bw()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.border = element_blank())+
+  scale_y_continuous(breaks=c(seq(from=0,to=1,by=0.2)))+
+  scale_fill_manual(values = my_colors)
+
+library(ggpubr)
+
+g <- ggarrange(
+  g_acc,g_auc,g_f1, g_Brier , ncol=4, 
+  common.legend = TRUE, legend = "bottom"
+)
+
+pdf(file="~/Documents/GitHub/SCTP_iMETA/Fig1/Eval_all_stat_new.pdf", width=12, height=4)
+print(g)
+dev.off()
+
+
+```
+
+```{r function}
+save(df_plot, file= "~/Documents/GitHub/SCTP_iMETA/Fig1/DF_plot_eval.RData")
+```
+
+
+```{r function}
+source("~/Documents/GitHub/SCTP_iMETA/Fig1/Eval_func.R")
+```
+
+
+```{r function}
+source("~/Documents/GitHub/SCTP_iMETA/Fig1/Eval_func.R")
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

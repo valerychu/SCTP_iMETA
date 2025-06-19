@@ -1,0 +1,138 @@
+---
+title: "Fig2 markdown"
+output: html_document
+date: "2025-06-19"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r load data}
+load("~/Documents/GitHub/SCTP_iMETA/Fig2/Seurat_C2.RData")
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+df <- st_dataset@meta.data
+
+# Create plot
+library(ggpubr)
+p1 <- ggplot(df, aes(x = cnv_score, y = pred_st)) +
+  geom_point(alpha=0.5) +  # Scatter plot
+  geom_smooth(method = "lm", se = TRUE, color = "#ae0000") +  # Fitted regression line
+  stat_cor(method = "pearson", digits = 2) +  # Correlation and p-value
+  theme_minimal()+
+  scale_y_continuous(limits = c(0, 1))+ylab("Malignancy") + xlab("CNV score")
+
+p2 <- ggplot(df, aes(x = tumor_sig1, y = pred_st)) +
+  geom_point(alpha=0.5) +  # Scatter plot
+  geom_smooth(method = "lm", se = TRUE, color = "#ae0000") +  # Fitted regression line
+  stat_cor(method = "pearson") +  # Correlation and p-value
+  theme_minimal()+
+  scale_y_continuous(limits = c(0, 1))+ylab("Malignancy")+ xlab("Tumor signature")
+
+p3 <- ggplot(df, aes(x = pEMT1, y = pred_st)) +
+  geom_point(alpha=0.5) +  # Scatter plot
+  geom_smooth(method = "lm", se = TRUE, color = "#ae0000") +  # Fitted regression line
+  stat_cor(method = "pearson") +  # Correlation and p-value
+  theme_minimal()+
+  scale_y_continuous(limits = c(0, 1))+ylab("Malignancy")+ xlab("pEMT score")
+
+p <- p1+p2+p3
+pdf(file=paste0("~/Documents/GitHub/SCTP_iMETA/Fig2/corr_", "Q3", ".pdf"), width=12, height=6)
+print(p)
+dev.off()
+
+```
+pred_st <- st_dataset@meta.data$pred_st
+pred_cat <- as.character(cut(pred_st, 
+                             breaks = c(-Inf, quantile(pred_st, c(0.25, 0.5, 0.75, 1))), 
+                             labels = c("C1",  "C2", "C3", "C4")))
+st_dataset <- AddMetaData(st_dataset, metadata = pred_cat, col.name = "predcat")
+
+tumor_enriched <- FindMarkers(st_dataset, ident.1 = "C4",ident.2 = "C1", group.by = 'predcat', verbose = FALSE)
+
+```{r function}
+pred_st <- st_dataset@meta.data$pred_st
+pred_cat <- as.character(cut(pred_st, 
+                             breaks = c(-Inf, quantile(pred_st, c(0.25, 0.5, 0.75, 1))), 
+                             labels = c("C1",  "C2", "C3", "C4")))
+st_dataset <- AddMetaData(st_dataset, metadata = pred_cat, col.name = "predcat")
+
+tumor_enriched <- FindMarkers(st_dataset, ident.1 = "C4",ident.2 = "C1", group.by = 'predcat', verbose = FALSE)
+library(openxlsx)
+write.xlsx(tumor_enriched, file="~/Documents/GitHub/SCTP_iMETA/Fig2/DEGs_P3.xlsx")
+
+genes <- rownames(tumor_enriched)[1:40]
+
+p <- DotPlot(object = st_dataset, features =genes, group.by = "predcat")
+df <- p$data
+#df$features.plot <- rownames(df)
+exp_mat<-df %>% 
+  dplyr::select(-pct.exp, -avg.exp) %>%  
+  tidyr::pivot_wider(names_from = id, values_from = avg.exp.scaled) %>% 
+  as.data.frame() 
+
+exp_mat <- exp_mat[!is.na(exp_mat$features.plot), ]
+
+row.names(exp_mat) <- exp_mat$features.plot  
+exp_mat <- exp_mat[,-1] %>% data.matrix()
+
+percent_mat<-df %>% 
+  dplyr::select(-avg.exp, -avg.exp.scaled) %>%  
+  tidyr::pivot_wider(names_from = id, values_from = pct.exp) %>% 
+  as.data.frame() 
+
+percent_mat <- percent_mat[!is.na(percent_mat$features.plot), ]
+row.names(percent_mat) <- percent_mat$features.plot  
+percent_mat <- percent_mat[,-1] %>% data.matrix()
+
+library(viridis)
+col_fun = circlize::colorRamp2(c(-1, 0, 2), plasma(20)[c(1,10, 20)])
+cell_fun = function(j, i, x, y, w, h, fill){
+  grid.rect(x = x, y = y, width = w, height = h, 
+            gp = gpar(col = NA, fill = NA))
+  grid.circle(x=x,y=y,r= percent_mat[i, j]/100 * min(unit.c(w, h)),
+              gp = gpar(fill = col_fun(exp_mat[i, j]), col = NA))}
+
+
+write.csv(exp_mat, file="~/Documents/GitHub/SCTP_iMETA/Fig2/Expression_FIG4H.csv")
+library(ComplexHeatmap)
+dot <- Heatmap(exp_mat,
+               heatmap_legend_param=list(title="expression"),
+               column_title = "clustered dotplot", 
+               col=col_fun,
+               rect_gp = gpar(type = "none"),
+               cell_fun = cell_fun,
+               row_names_gp = gpar(fontsize = 10),
+               row_km = 2,
+               border = "black",
+               cluster_columns = FALSE,column_order = c("C4","C3","C2", "C1"))
+
+
+
+pdf("~/Documents/GitHub/SCTP_iMETA/Fig2/Dotplot_Q3_degs.pdf")
+print(dot)
+dev.off()
+
+```
+
+```{r function}
+load("OUTPUT_CAO_new/Seurat_C4_subtumor.RData")
+
+
+```
+
+
+
+

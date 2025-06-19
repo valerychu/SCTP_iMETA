@@ -17,6 +17,7 @@ st_dataset <- AddMetaData(st_dataset, metadata = pred_cat, col.name = "predcat")
 tumor_enriched <- FindMarkers(st_dataset, ident.1 = "C4",ident.2 = "C1", group.by = 'predcat', verbose = FALSE)
 #tumor_enriched <- FindMarkers(st_dataset, ident.1 = "Positive", group.by = 'sign_C2', verbose = FALSE)
 library(openxlsx)
+library()
 write.xlsx(tumor_enriched, file="FIGURES/DEGs_P3.xlsx")
 
 genes <- rownames(tumor_enriched)[1:40]
@@ -26,7 +27,7 @@ df <- p$data
 #df$features.plot <- rownames(df)
 exp_mat<-df %>% 
   dplyr::select(-pct.exp, -avg.exp) %>%  
-  pivot_wider(names_from = id, values_from = avg.exp.scaled) %>% 
+  tidyr::pivot_wider(names_from = id, values_from = avg.exp.scaled) %>% 
   as.data.frame() 
 
 exp_mat <- exp_mat[!is.na(exp_mat$features.plot), ]
@@ -36,7 +37,7 @@ exp_mat <- exp_mat[,-1] %>% data.matrix()
 
 percent_mat<-df %>% 
   dplyr::select(-avg.exp, -avg.exp.scaled) %>%  
-  pivot_wider(names_from = id, values_from = pct.exp) %>% 
+  tidyr::pivot_wider(names_from = id, values_from = pct.exp) %>% 
   as.data.frame() 
 
 percent_mat <- percent_mat[!is.na(percent_mat$features.plot), ]
@@ -53,7 +54,7 @@ cell_fun = function(j, i, x, y, w, h, fill){
 
 
 write.csv(exp_mat, file="FIGURES/Expression_FIG4H.csv")
-
+library(ComplexHeatmap)
 dot <- Heatmap(exp_mat,
                heatmap_legend_param=list(title="expression"),
                column_title = "clustered dotplot", 
