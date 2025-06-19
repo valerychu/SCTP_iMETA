@@ -128,10 +128,114 @@ dev.off()
 ```
 
 ```{r function}
-load("OUTPUT_CAO_new/Seurat_C4_subtumor.RData")
+tumor_enriched1 <- read_excel("~/Documents/GitHub/SCTP_iMETA/Fig2/DEGs_FIG5E1.xlsx")
+tumor_enriched2 <- read_excel("~/Documents/GitHub/SCTP_iMETA/Fig2/DEGs_FIG5E2.xlsx")
+tumor_enriched3 <- read_excel("~/Documents/GitHub/SCTP_iMETA/Fig2/DEGs_FIG5E3.xlsx")
 
+subgenes1 <- tumor_enriched1%>% filter(p_val<10e-14)%>% filter(abs(avg_log2FC)>1.5)
+subgenes1$Group <- "T2 v.s T1"
+subgenes2 <- tumor_enriched2%>% filter(p_val<10e-14)%>% filter(abs(avg_log2FC)>1.5)
+subgenes2$Group <- "T1 v.s Other"
+subgenes3 <- tumor_enriched3%>% filter(p_val<10e-14)%>% filter(abs(avg_log2FC)>1.5)
+subgenes3$Group <- "T2 v.s Other"
+
+suball <- rbind(subgenes1, subgenes2, subgenes3)
+suball$gene <- rownames(suball)
+suball$label <- ifelse(suball$avg_log2FC < (-0.5), '#0068B2',
+                       ifelse(suball$avg_log2FC > 0.5, '#B2182B',
+                              'black'))
+dbar <- suball %>% group_by(Group) %>% summarise_all(list(min=min, max=max))%>%
+  dplyr::select(Group, avg_log2FC_min, avg_log2FC_max)
+
+my_col3 = c( "black","#e60012", "#00a0e9")
+
+library(ggrepel)
+g <- ggplot()+
+  geom_col(data = dbar,  # 绘制负向背景柱状图
+           mapping = aes(x = Group,y = avg_log2FC_min),
+           fill = "#dcdcdc",alpha = 0.6, width = 0.7) +
+  geom_col(data = dbar, # 绘制正向背景柱状图
+           mapping = aes(x = Group,y = avg_log2FC_max),
+           fill = "#dcdcdc",alpha = 0.6, width = 0.7) +
+  geom_jitter(data = suball, # 绘制所有数据点
+              aes(x = Group, y = avg_log2FC, color = label),
+              size = 0.85,
+              width =0.3) +
+  geom_tile(data = suball, # 绘制中心分组标记图
+            aes(x = Group,
+                y = 0,
+                fill = Group),
+            height=0.5,
+            color = "black",
+            alpha = 0.4,
+            show.legend = F) +
+  ggsci::scale_fill_npg(alpha=0.5) + # 自定义颜色
+  scale_color_manual(values=rev(my_col3))+# 自定义颜色
+  geom_text_repel(data = suball,  # 这里的filter很关键，筛选你想要标记的基因
+                  aes(x = Group, y = avg_log2FC, label = gene),
+                  size = 2, 
+                  max.overlaps = getOption("ggrepel.max.overlaps", default = 15),
+                  color = 'black',
+                  force = 1.2,
+                  arrow = arrow(length = unit(0.008, "npc"),
+                                type = "open", ends = "last"))+
+  labs(x="Cluster", y="Average logFC") +
+  geom_text(data=suball, # 绘制中心分组标记图文本注释
+            aes(x=Group, 
+                y=0, 
+                label=Group),
+            size = 3,
+            color ="white") +
+  theme_minimal() + 
+  theme(axis.title = element_text(size = 13,color = "black",face = "bold"),
+        axis.line.y = element_line(color = "black",size = 1.2),
+        axis.line.x = element_blank(),
+        axis.text.x = element_blank(),
+        panel.grid = element_blank(),
+        legend.position = "top",
+        legend.direction = "vertical",
+        legend.justification = c(1,0),
+        legend.text = element_text(size = 13))
+
+
+pdf("~/Documents/GitHub/SCTP_iMETA/Fig2/Dotplot_Q3_degs.pdf")
+print(g)
+dev.off()
 
 ```
+```{r function}
+setwd("/Users/w435u/Documents/ST_SC")
+load("OUTPUT_CAO_new/Seurat_C4_subtumor.RData")
+
+genes <- unique(c(rownames(tumor_enriched1)[1:25],rownames(tumor_enriched2)[1:25]))
+
+p <- DotPlot(object = st_dataset, features =genes, group.by = "T12")
+
+
+p <- DotPlot(object = st_dataset, features =genes, group.by = "T12")
+
+#write.csv(exp_mat, file="FIGURES/Expression_FIG5F.csv")
+exp_mat <- read.csv("~/Documents/GitHub/SCTP_iMETA/Fig2/Expression_FIG5F.csv")
+
+dot <- Heatmap(exp_mat,
+               heatmap_legend_param=list(title="expression"),
+               column_title = "clustered dotplot", 
+               col=col_fun,
+               rect_gp = gpar(type = "none"),
+               cell_fun = cell_fun,
+               row_names_gp = gpar(fontsize = 10),
+               row_km = 3,
+               border = "black",
+               cluster_columns = FALSE,column_order = c("T2","T1","Other"))
+
+dot
+
+pdf("OUTPUT_CAO_new/FIG/Dotplot_C4_all_new.pdf")
+dot
+dev.off()
+
+```
+
 
 
 
