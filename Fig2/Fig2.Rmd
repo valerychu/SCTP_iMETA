@@ -54,14 +54,7 @@ print(p)
 dev.off()
 
 ```
-pred_st <- st_dataset@meta.data$pred_st
-pred_cat <- as.character(cut(pred_st, 
-                             breaks = c(-Inf, quantile(pred_st, c(0.25, 0.5, 0.75, 1))), 
-                             labels = c("C1",  "C2", "C3", "C4")))
-st_dataset <- AddMetaData(st_dataset, metadata = pred_cat, col.name = "predcat")
-
-tumor_enriched <- FindMarkers(st_dataset, ident.1 = "C4",ident.2 = "C1", group.by = 'predcat', verbose = FALSE)
-
+Dot plot of different 
 ```{r function}
 pred_st <- st_dataset@meta.data$pred_st
 pred_cat <- as.character(cut(pred_st, 
@@ -127,10 +120,16 @@ dev.off()
 
 ```
 
+Differential expression between different annotated groups
 ```{r function}
-tumor_enriched1 <- read_excel("~/Documents/GitHub/SCTP_iMETA/Fig2/DEGs_FIG5E1.xlsx")
-tumor_enriched2 <- read_excel("~/Documents/GitHub/SCTP_iMETA/Fig2/DEGs_FIG5E2.xlsx")
-tumor_enriched3 <- read_excel("~/Documents/GitHub/SCTP_iMETA/Fig2/DEGs_FIG5E3.xlsx")
+load("/Users/w435u/Documents/ST_SC/OUTPUT_CAO_new/Seurat_C4_subtumor.RData")
+tumor_enriched1 <- FindMarkers(st_dataset, ident.1 = "T2",ident.2 = "T1", group.by = 'T12', verbose = FALSE)
+tumor_enriched2 <- FindMarkers(st_dataset, ident.1 = "T1",ident.2 = "Other", group.by = 'T12', verbose = FALSE)
+tumor_enriched3 <- FindMarkers(st_dataset, ident.1 = "T2",ident.2 = "Other", group.by = 'T12', verbose = FALSE)
+
+#tumor_enriched1 <- read_excel("~/Documents/GitHub/SCTP_iMETA/Fig2/DEGs_FIG5E1.xlsx")
+#tumor_enriched2 <- read_excel("~/Documents/GitHub/SCTP_iMETA/Fig2/DEGs_FIG5E2.xlsx")
+#tumor_enriched3 <- read_excel("~/Documents/GitHub/SCTP_iMETA/Fig2/DEGs_FIG5E3.xlsx")
 
 subgenes1 <- tumor_enriched1%>% filter(p_val<10e-14)%>% filter(abs(avg_log2FC)>1.5)
 subgenes1$Group <- "T2 v.s T1"
@@ -203,9 +202,9 @@ print(g)
 dev.off()
 
 ```
+
+Gen expression of top genes 
 ```{r function}
-setwd("/Users/w435u/Documents/ST_SC")
-load("OUTPUT_CAO_new/Seurat_C4_subtumor.RData")
 
 genes <- unique(c(rownames(tumor_enriched1)[1:25],rownames(tumor_enriched2)[1:25]))
 
@@ -214,7 +213,38 @@ p <- DotPlot(object = st_dataset, features =genes, group.by = "T12")
 
 p <- DotPlot(object = st_dataset, features =genes, group.by = "T12")
 
-#write.csv(exp_mat, file="FIGURES/Expression_FIG5F.csv")
+df <- p$data
+#df$features.plot <- rownames(df)
+exp_mat<-df %>% 
+  dplyr::select(-pct.exp, -avg.exp) %>%  
+  tidyr::pivot_wider(names_from = id, values_from = avg.exp.scaled) %>% 
+  as.data.frame() 
+
+exp_mat <- exp_mat[!is.na(exp_mat$features.plot), ]
+
+row.names(exp_mat) <- exp_mat$features.plot  
+exp_mat <- exp_mat[,-1] %>% data.matrix()
+
+percent_mat<-df %>% 
+  dplyr::select(-avg.exp, -avg.exp.scaled) %>%  
+  tidyr::pivot_wider(names_from = id, values_from = pct.exp) %>% 
+  as.data.frame() 
+
+percent_mat <- percent_mat[!is.na(percent_mat$features.plot), ]
+
+
+row.names(percent_mat) <- percent_mat$features.plot  
+percent_mat <- percent_mat[,-1] %>% data.matrix()
+
+library(viridis)
+col_fun = circlize::colorRamp2(c(-1, 0, 2), plasma(20)[c(1,10, 20)])
+cell_fun = function(j, i, x, y, w, h, fill){
+  grid.rect(x = x, y = y, width = w, height = h, 
+            gp = gpar(col = NA, fill = NA))
+  grid.circle(x=x,y=y,r= percent_mat[i, j]/100 * min(unit.c(w, h)),
+              gp = gpar(fill = col_fun(exp_mat[i, j]), col = NA))}
+
+write.csv(exp_mat, file="~/Documents/GitHub/SCTP_iMETA/Fig2/Expression_FIG5F.csv")
 exp_mat <- read.csv("~/Documents/GitHub/SCTP_iMETA/Fig2/Expression_FIG5F.csv")
 
 dot <- Heatmap(exp_mat,
@@ -228,9 +258,7 @@ dot <- Heatmap(exp_mat,
                border = "black",
                cluster_columns = FALSE,column_order = c("T2","T1","Other"))
 
-dot
-
-pdf("OUTPUT_CAO_new/FIG/Dotplot_C4_all_new.pdf")
+pdf("~/Documents/GitHub/SCTP_iMETA/Fig2/Dotplot_Q4_degs.pdf")
 dot
 dev.off()
 
