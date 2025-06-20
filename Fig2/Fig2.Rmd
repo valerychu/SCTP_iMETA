@@ -14,7 +14,9 @@ This is an R Markdown document. Markdown is a simple formatting syntax for autho
 
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
-```{r load data}
+```{r load functions}
+library(Seurat)
+library(ggplot2)
 load("~/Documents/GitHub/SCTP_iMETA/Fig2/Seurat_C2.RData")
 ```
 
@@ -22,7 +24,7 @@ load("~/Documents/GitHub/SCTP_iMETA/Fig2/Seurat_C2.RData")
 
 You can also embed plots, for example:
 
-```{r pressure, echo=FALSE}
+```{r load data, echo=TRUE}
 df <- st_dataset@meta.data
 
 # Create plot
@@ -55,7 +57,7 @@ dev.off()
 
 ```
 Dot plot of different 
-```{r function}
+```{r plot}
 pred_st <- st_dataset@meta.data$pred_st
 pred_cat <- as.character(cut(pred_st, 
                              breaks = c(-Inf, quantile(pred_st, c(0.25, 0.5, 0.75, 1))), 
@@ -121,7 +123,7 @@ dev.off()
 ```
 
 Differential expression between different annotated groups
-```{r function}
+```{r plot2}
 load("/Users/w435u/Documents/ST_SC/OUTPUT_CAO_new/Seurat_C4_subtumor.RData")
 tumor_enriched1 <- FindMarkers(st_dataset, ident.1 = "T2",ident.2 = "T1", group.by = 'T12', verbose = FALSE)
 tumor_enriched2 <- FindMarkers(st_dataset, ident.1 = "T1",ident.2 = "Other", group.by = 'T12', verbose = FALSE)
@@ -204,17 +206,13 @@ dev.off()
 ```
 
 Gen expression of top genes 
-```{r function}
+```{r plot3}
 
 genes <- unique(c(rownames(tumor_enriched1)[1:25],rownames(tumor_enriched2)[1:25]))
 
 p <- DotPlot(object = st_dataset, features =genes, group.by = "T12")
 
-
-p <- DotPlot(object = st_dataset, features =genes, group.by = "T12")
-
 df <- p$data
-#df$features.plot <- rownames(df)
 exp_mat<-df %>% 
   dplyr::select(-pct.exp, -avg.exp) %>%  
   tidyr::pivot_wider(names_from = id, values_from = avg.exp.scaled) %>% 

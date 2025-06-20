@@ -15,6 +15,7 @@ This is an R Markdown document. Markdown is a simple formatting syntax for autho
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
 ```{r function}
+library(ggplot2)
 source("~/Documents/GitHub/SCTP_iMETA/Fig1/Eval_func.R")
 ```
 
@@ -22,7 +23,7 @@ source("~/Documents/GitHub/SCTP_iMETA/Fig1/Eval_func.R")
 
 You can also embed plots, for example:
 
-```{r result comparison HCC, echo=FALSE}
+```{r result comparison HCC, echo=TRUE}
 eval_all =  matrix(NA, 4, 8)
 eval_cf = eval_copykat = eval_meti = matrix(NA, 4, 8)
 
@@ -35,7 +36,7 @@ for (i in (1:4)) {
    rownames(copykat_prediction) <- copykat_prediction$cell.names
   #copykat_prediction$pred_cnv <- ifelse(substr(copykat_prediction$copykat.pred,1,2)=="c2", 1, 0)
   copykat_prediction$pred_cnv <- ifelse(substr(copykat_prediction$copykat.pred,1,2)=="an", 1, 0)
-  test <- merge(copykat_prediction, pred_st_dataset@meta.data, by=0, all=TRUE)
+  #test <- merge(copykat_prediction, pred_st_dataset@meta.data, by=0, all=TRUE)
   
   METI_label <- read.csv(paste0("~/Documents/GitHub/SCTP_iMETA/Fig1/METI_label_liver",i, ".csv"), row.names=1)
   test <- merge(copykat_prediction, METI_label, by=0, all=TRUE)
@@ -116,21 +117,14 @@ pdf(file="~/Documents/GitHub/SCTP_iMETA/Fig1/Eval_all_stat_new.pdf", width=12, h
 print(g)
 dev.off()
 
+print(g)
 
 ```
 
-```{r function}
+```{r }
 save(df_plot, file= "~/Documents/GitHub/SCTP_iMETA/Fig1/DF_plot_eval.RData")
 ```
 
 
-```{r function}
-source("~/Documents/GitHub/SCTP_iMETA/Fig1/Eval_func.R")
-```
-
-
-```{r function}
-source("~/Documents/GitHub/SCTP_iMETA/Fig1/Eval_func.R")
-```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
