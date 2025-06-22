@@ -1,5 +1,6 @@
 ---
-title: "Fig1"
+title: "Figure 1. Single-Cell and Tissue Phenotype prediction (SCTP). "
+author: "Wencan Zhu"
 output: html_document
 date: "2025-06-19"
 ---
@@ -8,11 +9,7 @@ date: "2025-06-19"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+## Data loading
 
 ```{r function}
 library(ggplot2)
@@ -21,7 +18,8 @@ library(RColorBrewer)
 source("~/Documents/GitHub/SCTP_iMETA/Fig1/Eval_func.R")
 ```
 
-```{r SC data prediction}
+## TSNE representation of the single cell database used for prediction. Cells are colored by global type and subtype annotations respectively. 
+```{r SC data cell types}
 load("/Users/w435u/Documents/ST_SC/OUTPUT2_test/Seurat_SC_pred.RData")
 col=brewer.pal(n = 11, name = "RdBu")
 
@@ -38,12 +36,18 @@ out_name = "~/Documents/GitHub/SCTP_iMETA/Fig1/SC_DimPlot_Global_Cluster.pdf"
 pdf(out_name)
 DimPlot(pred_sc_seurat, group.by = "Global_Cluster", reduction = "tsne", cols = my_cols)
 dev.off()
+```
 
+## Prediction of cell phenotype (malignant vs. non-malignant) based on different spatial transcriptomic datasets by SCTP.
+```{r SC data prediction}
 DimPlot(pred_sc_seurat, reduction = "tsne", group.by = c('sign_sc','sign_sc2','sign_sc3','sign_sc4' ), cols =  c(col[10], col[2]),  pt.size=0.00001)+ggtitle("")
 ggsave("~/Documents/GitHub/SCTP_iMETA/Fig1/SC_DimPlot_pred_all.pdf")
 
 
 ```
+## Nonimmune cell malignancy prediction based on SCTP-CRC. TSNE presentation of cells, with cells colored by the predicted phenotype from SCTP-CRC
+
+
 ```{r SC data prediction CAO}
 load("/Users/w435u/Documents/ST_SC/DATA_STSC_CAO/Seurat_nonimmune.RData")
 load("/Users/w435u/Documents/ST_SC/OUTPUT_CAO_new/Meta_pred_sc_CAO_degree100.RData")
@@ -58,8 +62,7 @@ dev.off()
 print(gg)
 ```
 
-
-
+## True labels and SCTP-HCC predictions on independent HCC dataset. 
 ```{r SCTP prediction}
 label_colors <- c("tumor" = "#E075A0", "normal" ="#77aecb")
 
@@ -77,9 +80,7 @@ for (i in 1:4) {
 ```
 
 
-## Including Plots
-
-You can also embed plots, for example:
+## Benchmarking prediction performance of SCTP and other three existing methods on independent HCC dataset, including accuracy, F1 score, AUC and Brier score. 
 
 ```{r result comparison HCC, echo=TRUE}
 eval_all =  matrix(NA, 4, 8)

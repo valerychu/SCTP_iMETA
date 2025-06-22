@@ -1,5 +1,6 @@
 ---
-title: "Fig2 markdown"
+title: "Figure 2. Early signal of colorectal cancer detected by cell states and spots distribution using SCTP-CRC and key marker genes related to early-warning signal and their spatial-temporal CRC association."
+author: "Wencan Zhu"
 output: html_document
 date: "2025-06-19"
 ---
@@ -8,11 +9,7 @@ date: "2025-06-19"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+## Data loading
 
 ```{r load functions}
 library(Seurat)
@@ -21,13 +18,12 @@ library(RColorBrewer)
 load("/Users/w435u/Documents/ST_SC/DATA_STSC_CAO/Seurat_C2.RData")
 ```
 
-## Including Plots
+## Malignant annotation by SCTP-CRC on the ST Q3 histological image. 
 ```{r plot Q3 prediction}
 SpatialFeaturePlot(st_dataset, "pred_st")+
   scale_fill_gradientn(colours = rev(brewer.pal(n = 11, name = "RdBu"))[1:11])
 ```
-
-You can also embed plots, for example:
+## The significant correlation between TL score and known malignant signatures (i.e. corresponding CNV scores, tumor signatures and pEMT scores) for predicted malignant cells. 
 
 ```{r load data, echo=TRUE}
 df <- st_dataset@meta.data
@@ -62,7 +58,7 @@ dev.off()
 
 p
 ```
-Dot plot of different 
+## DEGs between different cell groups defined by their predicted tumor probability. 
 ```{r plot}
 pred_st <- st_dataset@meta.data$pred_st
 pred_cat <- as.character(cut(pred_st, 
@@ -127,16 +123,21 @@ print(dot)
 dev.off()
 
 ```
+## Spatial expression profile of EPCAM and MUC2 on ST slide, along with the signature score and spatial distribution of Proliferation and EMT pathways respectively.
+```{r feature plot}
+SpatialFeaturePlot(st_dataset, features = c("EPCAM", "MUC2", "pEMT1"))
+```
 
-Differential expression between different annotated groups
 ```{r load Q4}
 library(dplyr)
 load("/Users/w435u/Documents/ST_SC/OUTPUT_CAO_new/Seurat_C4_subtumor.RData")
 ```
 
+## Malignant annotation by SCTP-CRC on the histological image of ST Q4
 ```{r plot Q4 prediction}
 SpatialDimPlot(st_dataset, "T12")
 ```
+## Expression profile of Tumor MUC2+ specific DEGs in tumor associated sub-regions identified by SCTP-CRC, where the P value of trend test indicates their early expression change across different CRC stages in the TCGA-COAD cohort. 
 
 ```{r plot2}
 #tumor_enriched1 <- FindMarkers(st_dataset, ident.1 = "T2",ident.2 = "T1", group.by = 'T12', verbose = FALSE)
@@ -291,6 +292,9 @@ dev.off()
 ```
 
 
-
+## Spatial expression profile of several new marker genes from the above DEGs including MUC2, MMP2, IGKC, MT1E, PIGR and CEACAM5. 
+```{r feature plot q4}
+SpatialFeaturePlot(st_dataset, features = c("MT1E", "PIGR", "MMP2", "IGKC", "CEACAM5", "MUC2"))
+```
 
 
