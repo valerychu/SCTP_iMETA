@@ -16,8 +16,66 @@ When you click the **Knit** button a document will be generated that includes bo
 
 ```{r function}
 library(ggplot2)
+library(Seurat)
+library(RColorBrewer)
 source("~/Documents/GitHub/SCTP_iMETA/Fig1/Eval_func.R")
 ```
+
+```{r SC data prediction}
+load("/Users/w435u/Documents/ST_SC/OUTPUT2_test/Seurat_SC_pred.RData")
+col=brewer.pal(n = 11, name = "RdBu")
+
+my_cols <- c("Epithelial cells"='#A4DFF2',
+             "Mast cells"='#5C88DAFF',
+             "Myeloids"='#00B5E2FF',
+             "Stromal cells"='#7C878EFF',
+             "T cells" ='#ff9a00',
+             "B cells"='#CC0C00FF')
+
+DimPlot(pred_sc_seurat, group.by = "Global_Cluster", reduction = "tsne", cols = my_cols)
+
+out_name = "~/Documents/GitHub/SCTP_iMETA/Fig1/SC_DimPlot_Global_Cluster.pdf"
+pdf(out_name)
+DimPlot(pred_sc_seurat, group.by = "Global_Cluster", reduction = "tsne", cols = my_cols)
+dev.off()
+
+DimPlot(pred_sc_seurat, reduction = "tsne", group.by = c('sign_sc','sign_sc2','sign_sc3','sign_sc4' ), cols =  c(col[10], col[2]),  pt.size=0.00001)+ggtitle("")
+ggsave("~/Documents/GitHub/SCTP_iMETA/Fig1/SC_DimPlot_pred_all.pdf")
+
+
+```
+```{r SC data prediction CAO}
+load("/Users/w435u/Documents/ST_SC/DATA_STSC_CAO/Seurat_nonimmune.RData")
+load("/Users/w435u/Documents/ST_SC/OUTPUT_CAO_new/Meta_pred_sc_CAO_degree100.RData")
+sc_nonimmune_pred <- AddMetaData(sc_nonimmune_seurat, metadata = metadata_sc100)
+name_meta <- paste0("sign_", "C1", "_100")
+pdf(paste0("~/Documents/GitHub/SCTP_iMETA/Fig1/TSNE_pred_SC", "C1", "_100.pdf"))
+gg <- DimPlot(sc_nonimmune_pred, reduction = "tsne", group.by = name_meta, cols =  c("#053061", '#EB455F'), 
+          order=c("negative","positive"), pt.size=0.0000001)+NoLegend() +ggtitle("")
+print(gg)
+dev.off()
+  
+print(gg)
+```
+
+
+
+```{r SCTP prediction}
+label_colors <- c("tumor" = "#E075A0", "normal" ="#77aecb")
+
+fig_all <- label_all <- list()
+for (i in 1:4) {
+  load(paste0("/Users/w435u/Documents/ST_SC/OUTPUT_HCC/spatial/ST-liver",i, "_seurat.RData"))
+  fig_all[[i]] <- SpatialFeaturePlot(pred_st_dataset, "malignancy",  pt.size.factor = 2.5)+
+ scale_fill_gradientn(colours = rev(brewer.pal(n = 11, name = "RdBu")))
+
+  label_all[[i]] <- SpatialDimPlot(pred_st_dataset, "label",  cols = label_colors,, pt.size.factor = 2.5 )
+  print(fig_all[[i]])
+  print(label_all[[i]])
+}
+
+```
+
 
 ## Including Plots
 
@@ -28,7 +86,6 @@ eval_all =  matrix(NA, 4, 8)
 eval_cf = eval_copykat = eval_meti = matrix(NA, 4, 8)
 
 plot_methods <- c( "malignancy", "pred_meti", "pred_ck", "pred_cf")
-label_colors <- c("tumor" = "#E075A0", "normal" ="#77aecb")
 for (i in (1:4)) {
   out_cf <- read.csv(paste0("~/Documents/GitHub/SCTP_iMETA/Fig1/out_HCC_liver",i,".csv"))
    pred_cf <- out_cf$predict

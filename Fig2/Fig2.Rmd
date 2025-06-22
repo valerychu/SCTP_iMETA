@@ -17,10 +17,15 @@ When you click the **Knit** button a document will be generated that includes bo
 ```{r load functions}
 library(Seurat)
 library(ggplot2)
-load("~/Documents/GitHub/SCTP_iMETA/Fig2/Seurat_C2.RData")
+library(RColorBrewer)
+load("/Users/w435u/Documents/ST_SC/DATA_STSC_CAO/Seurat_C2.RData")
 ```
 
 ## Including Plots
+```{r plot Q3 prediction}
+SpatialFeaturePlot(st_dataset, "pred_st")+
+  scale_fill_gradientn(colours = rev(brewer.pal(n = 11, name = "RdBu"))[1:11])
+```
 
 You can also embed plots, for example:
 
@@ -55,6 +60,7 @@ pdf(file=paste0("~/Documents/GitHub/SCTP_iMETA/Fig2/corr_", "Q3", ".pdf"), width
 print(p)
 dev.off()
 
+p
 ```
 Dot plot of different 
 ```{r plot}
@@ -64,9 +70,10 @@ pred_cat <- as.character(cut(pred_st,
                              labels = c("C1",  "C2", "C3", "C4")))
 st_dataset <- AddMetaData(st_dataset, metadata = pred_cat, col.name = "predcat")
 
-tumor_enriched <- FindMarkers(st_dataset, ident.1 = "C4",ident.2 = "C1", group.by = 'predcat', verbose = FALSE)
-library(openxlsx)
-write.xlsx(tumor_enriched, file="~/Documents/GitHub/SCTP_iMETA/Fig2/DEGs_P3.xlsx")
+#tumor_enriched <- FindMarkers(st_dataset, ident.1 = "C4",ident.2 = "C1", group.by = 'predcat', verbose = FALSE)
+
+#write.csv(tumor_enriched, file="~/Documents/GitHub/SCTP_iMETA/Fig2/DEGs_P3.csv")
+tumor_enriched <- read.csv( file="~/Documents/GitHub/SCTP_iMETA/Fig2/DEGs_P3.csv", row.names = 1) 
 
 genes <- rownames(tumor_enriched)[1:40]
 
@@ -77,9 +84,7 @@ exp_mat<-df %>%
   dplyr::select(-pct.exp, -avg.exp) %>%  
   tidyr::pivot_wider(names_from = id, values_from = avg.exp.scaled) %>% 
   as.data.frame() 
-
 exp_mat <- exp_mat[!is.na(exp_mat$features.plot), ]
-
 row.names(exp_mat) <- exp_mat$features.plot  
 exp_mat <- exp_mat[,-1] %>% data.matrix()
 
@@ -100,8 +105,8 @@ cell_fun = function(j, i, x, y, w, h, fill){
   grid.circle(x=x,y=y,r= percent_mat[i, j]/100 * min(unit.c(w, h)),
               gp = gpar(fill = col_fun(exp_mat[i, j]), col = NA))}
 
-
 write.csv(exp_mat, file="~/Documents/GitHub/SCTP_iMETA/Fig2/Expression_FIG4H.csv")
+
 library(ComplexHeatmap)
 dot <- Heatmap(exp_mat,
                heatmap_legend_param=list(title="expression"),
@@ -115,6 +120,7 @@ dot <- Heatmap(exp_mat,
                cluster_columns = FALSE,column_order = c("C4","C3","C2", "C1"))
 
 
+dot
 
 pdf("~/Documents/GitHub/SCTP_iMETA/Fig2/Dotplot_Q3_degs.pdf")
 print(dot)
@@ -123,15 +129,27 @@ dev.off()
 ```
 
 Differential expression between different annotated groups
-```{r plot2}
+```{r load Q4}
+library(dplyr)
 load("/Users/w435u/Documents/ST_SC/OUTPUT_CAO_new/Seurat_C4_subtumor.RData")
-tumor_enriched1 <- FindMarkers(st_dataset, ident.1 = "T2",ident.2 = "T1", group.by = 'T12', verbose = FALSE)
-tumor_enriched2 <- FindMarkers(st_dataset, ident.1 = "T1",ident.2 = "Other", group.by = 'T12', verbose = FALSE)
-tumor_enriched3 <- FindMarkers(st_dataset, ident.1 = "T2",ident.2 = "Other", group.by = 'T12', verbose = FALSE)
+```
 
-#tumor_enriched1 <- read_excel("~/Documents/GitHub/SCTP_iMETA/Fig2/DEGs_FIG5E1.xlsx")
-#tumor_enriched2 <- read_excel("~/Documents/GitHub/SCTP_iMETA/Fig2/DEGs_FIG5E2.xlsx")
-#tumor_enriched3 <- read_excel("~/Documents/GitHub/SCTP_iMETA/Fig2/DEGs_FIG5E3.xlsx")
+```{r plot Q4 prediction}
+SpatialDimPlot(st_dataset, "T12")
+```
+
+```{r plot2}
+#tumor_enriched1 <- FindMarkers(st_dataset, ident.1 = "T2",ident.2 = "T1", group.by = 'T12', verbose = FALSE)
+#tumor_enriched2 <- FindMarkers(st_dataset, ident.1 = "T1",ident.2 = "Other", group.by = 'T12', verbose = FALSE)
+#tumor_enriched3 <- FindMarkers(st_dataset, ident.1 = "T2",ident.2 = "Other", group.by = 'T12', verbose = FALSE)
+
+#write.csv(tumor_enriched1, file="~/Documents/GitHub/SCTP_iMETA/Fig2/DEGs_Q4_1.csv")
+#write.csv(tumor_enriched2, file="~/Documents/GitHub/SCTP_iMETA/Fig2/DEGs_Q4_2.csv")
+#write.csv(tumor_enriched3, file="~/Documents/GitHub/SCTP_iMETA/Fig2/DEGs_Q4_3.csv")
+
+tumor_enriched1 <- read.csv("~/Documents/GitHub/SCTP_iMETA/Fig2/DEGs_Q4_1.csv", row.names = 1)
+tumor_enriched2 <- read.csv("~/Documents/GitHub/SCTP_iMETA/Fig2/DEGs_Q4_2.csv", row.names = 1)
+tumor_enriched3 <- read.csv("~/Documents/GitHub/SCTP_iMETA/Fig2/DEGs_Q4_3.csv", row.names = 1)
 
 subgenes1 <- tumor_enriched1%>% filter(p_val<10e-14)%>% filter(abs(avg_log2FC)>1.5)
 subgenes1$Group <- "T2 v.s T1"
@@ -198,6 +216,7 @@ g <- ggplot()+
         legend.justification = c(1,0),
         legend.text = element_text(size = 13))
 
+g 
 
 pdf("~/Documents/GitHub/SCTP_iMETA/Fig2/Dotplot_Q3_degs.pdf")
 print(g)
@@ -205,45 +224,52 @@ dev.off()
 
 ```
 
-Gen expression of top genes 
+Gene expression of top genes 
 ```{r plot3}
+load("/Users/w435u/Documents/ST_SC/OUTPUT_CAO_new/Seurat_C4_subtumor.RData")
+
+
+tumor_enriched1 <- read.csv("~/Documents/GitHub/SCTP_iMETA/Fig2/DEGs_Q4_1.csv", row.names = 1)
+tumor_enriched2 <- read.csv("~/Documents/GitHub/SCTP_iMETA/Fig2/DEGs_Q4_2.csv", row.names = 1)
+tumor_enriched3 <- read.csv("~/Documents/GitHub/SCTP_iMETA/Fig2/DEGs_Q4_3.csv", row.names = 1)
+
 
 genes <- unique(c(rownames(tumor_enriched1)[1:25],rownames(tumor_enriched2)[1:25]))
 
 p <- DotPlot(object = st_dataset, features =genes, group.by = "T12")
 
 df <- p$data
-exp_mat<-df %>% 
-  dplyr::select(-pct.exp, -avg.exp) %>%  
-  tidyr::pivot_wider(names_from = id, values_from = avg.exp.scaled) %>% 
-  as.data.frame() 
+exp_mat<-df %>%
+  dplyr::select(-pct.exp, -avg.exp) %>%
+  tidyr::pivot_wider(names_from = id, values_from = avg.exp.scaled) %>%
+  as.data.frame()
 
 exp_mat <- exp_mat[!is.na(exp_mat$features.plot), ]
 
-row.names(exp_mat) <- exp_mat$features.plot  
+row.names(exp_mat) <- exp_mat$features.plot
 exp_mat <- exp_mat[,-1] %>% data.matrix()
 
-percent_mat<-df %>% 
-  dplyr::select(-avg.exp, -avg.exp.scaled) %>%  
-  tidyr::pivot_wider(names_from = id, values_from = pct.exp) %>% 
-  as.data.frame() 
+percent_mat<-df %>%
+  dplyr::select(-avg.exp, -avg.exp.scaled) %>%
+  tidyr::pivot_wider(names_from = id, values_from = pct.exp) %>%
+  as.data.frame()
 
 percent_mat <- percent_mat[!is.na(percent_mat$features.plot), ]
 
 
-row.names(percent_mat) <- percent_mat$features.plot  
+row.names(percent_mat) <- percent_mat$features.plot
 percent_mat <- percent_mat[,-1] %>% data.matrix()
 
-library(viridis)
-col_fun = circlize::colorRamp2(c(-1, 0, 2), plasma(20)[c(1,10, 20)])
-cell_fun = function(j, i, x, y, w, h, fill){
-  grid.rect(x = x, y = y, width = w, height = h, 
-            gp = gpar(col = NA, fill = NA))
-  grid.circle(x=x,y=y,r= percent_mat[i, j]/100 * min(unit.c(w, h)),
-              gp = gpar(fill = col_fun(exp_mat[i, j]), col = NA))}
-
-write.csv(exp_mat, file="~/Documents/GitHub/SCTP_iMETA/Fig2/Expression_FIG5F.csv")
-exp_mat <- read.csv("~/Documents/GitHub/SCTP_iMETA/Fig2/Expression_FIG5F.csv")
+ library(viridis)
+ col_fun = circlize::colorRamp2(c(-1, 0, 2), plasma(20)[c(1,10, 20)])
+ cell_fun = function(j, i, x, y, w, h, fill){
+   grid.rect(x = x, y = y, width = w, height = h, 
+             gp = gpar(col = NA, fill = NA))
+   grid.circle(x=x,y=y,r= percent_mat[i, j]/100 * min(unit.c(w, h)),
+               gp = gpar(fill = col_fun(exp_mat[i, j]), col = NA))}
+# 
+# write.csv(exp_mat, file="~/Documents/GitHub/SCTP_iMETA/Fig2/Expression_FIG5F.csv")
+exp_mat <- read.csv("~/Documents/GitHub/SCTP_iMETA/Fig2/Expression_FIG5F.csv", row.names = 1)
 
 dot <- Heatmap(exp_mat,
                heatmap_legend_param=list(title="expression"),
@@ -255,6 +281,8 @@ dot <- Heatmap(exp_mat,
                row_km = 3,
                border = "black",
                cluster_columns = FALSE,column_order = c("T2","T1","Other"))
+
+dot
 
 pdf("~/Documents/GitHub/SCTP_iMETA/Fig2/Dotplot_Q4_degs.pdf")
 dot
